@@ -4,9 +4,9 @@ Bit Writing Request/Response
 
 TODO add ExtException to protocol
 """
-from bubot.Helpers.Coap.coap import Message, Code
+from BuBot.Helpers.Coap.coap import Message, Code
 import asyncio
-from bubot.Core.OcfMessage import OcfRequest, OcfResponse
+from BuBot.Core.OcfMessage import OcfRequest, OcfResponse
 import logging
 
 # _logger = logging.getLogger('CoapProtocol')

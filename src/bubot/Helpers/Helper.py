@@ -11,46 +11,53 @@ import re
 
 
 class Helper:
+
     @staticmethod
-    def get_obj_class(path, obj_type, obj_name, **kwargs):
+    def get_obj_class(path, obj_name, **kwargs):
         folder_name = f'.{obj_name}' if kwargs.get('folder') else ''
         class_name = obj_name
         suffix = kwargs.get('suffix')
         if suffix:
             class_name += suffix
-        full_path = f'{path}.{obj_type}{folder_name}.{class_name}.{class_name}'
+        full_path = f'{path}{folder_name}.{class_name}.{class_name}'
         try:
             return Helper.get_class(full_path)
+        except ExtException as err:
+            raise ExtException(3100, detail=f'object {obj_name}', parent=err)
+
+    @staticmethod
+    def get_class(class_full_path):
+        try:
+            parts = class_full_path.split('.')
+            module = ".".join(parts[:-1])
+            m = __import__(module)
+            for comp in parts[1:]:
+                m = getattr(m, comp)
+            return m
         except ImportError as err:
             # ошибки в классе  или нет файла
             raise ExtException(
                 'Unable to import object',
-                detail=full_path,
-                action='Helper.get_class'
+                detail=class_full_path,
+                action='Helper.get_class',
+                parent=err
+
             )
         except AttributeError as err:
             # Нет такого класса
             # raise AttributeError('get_class({0}: {1})'.format(class_full_path, str(e)))
             raise ExtException(
                 'Object not found',
-                detail=full_path,
+                detail=class_full_path,
                 action='Helper.get_class'
             )
         except Exception as err:
             raise ExtException(
                 'Unable to import object',
-                detail=full_path,
+                detail=class_full_path,
                 action='Helper.get_class'
             )
 
-    @staticmethod
-    def get_class(class_full_path):
-        parts = class_full_path.split('.')
-        module = ".".join(parts[:-1])
-        m = __import__(module)
-        for comp in parts[1:]:
-            m = getattr(m, comp)
-        return m
 
     @staticmethod
     def convert_ticks_to_datetime(ticks):
@@ -82,7 +89,7 @@ class Helper:
             except ExtException as e:
                 try:
                     _elem = '{0}.{1}'.format(element, e.stack[len(e.stack) - 1]['dump']['element'])
-                    _msg = e.stack[0]['dump']['msg']
+                    _msg = e.stack[0]['dump']['message']
                 except ExtException:
                     _msg = str(e)
                     _elem = element
@@ -99,7 +106,7 @@ class Helper:
                     detail='{0}({1})'.format(e, element),
                     dump={
                         'element': element,
-                        'msg': str(e)
+                        'message': str(e)
                     })
         return base
 

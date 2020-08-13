@@ -1,5 +1,5 @@
 import unittest
-from bubot.Helpers.ExtException import ExtException
+from BuBot.Helpers.ExtException import ExtException
 
 
 class TestExtException(unittest.TestCase):
@@ -19,8 +19,8 @@ class TestExtException(unittest.TestCase):
         except ExtException as err:
             err3 = ExtException(action='action3', parent=err)
         self.assertEqual(3, len(err3.stack))
-        self.assertEqual('IndexError', err3.stack[0]['msg'])
-        self.assertEqual('msg2', err3.msg)
+        self.assertEqual('IndexError', err3.stack[0]['message'])
+        self.assertEqual('msg2', err3.message)
         print(err3)
         pass
 
@@ -36,6 +36,6 @@ class TestExtException(unittest.TestCase):
         except ExtException as err:
             err3 = ExtException(action='action3', parent=err)
         self.assertEqual(2, len(err3.stack))
-        self.assertEqual('msg1', err3.stack[0]['msg'])
-        self.assertEqual('msg2', err3.msg)
+        self.assertEqual('msg1', err3.stack[0]['message'])
+        self.assertEqual('msg2', err3.message)
         print(err3)

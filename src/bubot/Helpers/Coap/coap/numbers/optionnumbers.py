@@ -47,7 +47,7 @@ from .. import optiontypes
 # +-----+---+---+---+---+----------------+------------+--------+-------------+
 # =============================================================================
 #
-# This table should serve as a reference only. It does not confirm that
+# This name should serve as a reference only. It does not confirm that
 # txThings conforms to the documents above
 #
 

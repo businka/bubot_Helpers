@@ -3,18 +3,33 @@ from os import path
 import sys
 import traceback
 
+# 3xxx - Ошибки в нашем коде
+# 4xxx - Ошибки вызванные некорректными действиями пользователей
+# 5xxx - Ошибки вызванные временной недоступностью функционала,повторный вызов с теми же параметрами может быть успешным
+# 6xxx - Ошибки во внешних сервисах и библиотеках
+# 8xxx - Запросы не реализованного, но потонциально интересного функционала
+# 9xxx - Обертка над стандартными ошибками для испльзования в коде
+
 codes = {
-    3000: "Unknown error",
-    4000: "",
-    4001: "Bad login or password",
-    4010: "Невозможно сохранить настройки",
-    5000: "",
-    6000: "",
-    8000: "",
+    "3000": {"en": "Unknown error"},
+    "3100": {"en": "Handler not found"},
+    "4000": {"en": "Unknown error"},
+    "4011": {"en": "Unauthorized"},
+    "4031": {"en": "Access denied", "ru": "Отказано в доступе"},
+    "4039": {"en": "Account not specified", "ru": "Не указан аккаунт"},
+    "4010": {"en": "Unable to save settings", "ru": "Невозможно сохранить настройки"},
+    "4200": {"en": "Required details are missing", "ru": "Не заполнен обязательный реквизит"},
+    "5000": {"en": "Unknown error"},
+    "6000": {"en": "Unknown error"},
+    "8000": {"en": "Unknown error"},
+    "9010": {"en": "KeyError"},
+    "9011": {"en": "InvalidId"}
 }
 
 http_codes = {
-    4001: 401
+    "4011": 401,
+    "4031": 403,
+    "4039": 403
 }
 
 
@@ -22,7 +37,7 @@ class ExtException(Exception):
     def __init__(self, *args, **kwargs):
         self.code = 3000
         self.skip_traceback = kwargs.get('skip_traceback', 0)
-        self.msg = ''
+        self.message = ''
         self.detail = ''
         self.action = ''
         self.dump = {}
@@ -31,23 +46,23 @@ class ExtException(Exception):
         parent = kwargs.get('parent')
         if parent and isinstance(parent, ExtException):  # прокидываем ошибку наверх
             self.add_parent_to_stack(parent)
-            self.msg = parent.msg
+            self.message = parent.message
             self.code = parent.code
             self.detail = parent.detail
-            self.new_msg = bool(kwargs.get('msg'))
+            self.new_msg = bool(kwargs.get('message'))
         self.init_from_dict(kwargs)
         if parent and isinstance(parent, Exception) and not isinstance(parent, ExtException):
             self.code = 3000
-            self.msg = self.get_msg_by_code(self.code)
+            self.message = self.get_msg_by_code(self.code)
             self.detail = str(parent)
             self.add_sys_exc_to_stack()
         if args:
             if isinstance(args[0], str):
                 self.new_msg = True
-                self.msg = args[0]
+                self.message = args[0]
             elif isinstance(args[0], int):
                 self.new_msg = True
-                self.msg = self.get_msg_by_code(args[0])
+                self.message = self.get_msg_by_code(args[0])
                 self.code = args[0]
             else:
                 raise Exception(f'Not supported mode - ExtException({type(args[0])})')
@@ -68,7 +83,7 @@ class ExtException(Exception):
                 parent.dump['traceback'] = data['traceback']
 
         if parent.new_msg:
-            parent.dump['msg'] = parent.msg
+            parent.dump['message'] = parent.message
             if parent.detail:
                 parent.dump['detail'] = parent.detail
         self.stack.append(parent.dump)
@@ -81,33 +96,30 @@ class ExtException(Exception):
         self.stack.append(data)
 
     def get_sys_exc_info(self):
-        try:
-            exc_info = sys.exc_info()
-            last_call = traceback.extract_tb(exc_info[2], limit=self.skip_traceback + 1)
-            last_call = last_call[self.skip_traceback]
-        except Exception:
-            return None  # исключения не было
-        # if exc_info[0] == cls:
-        #     return None
+        exc_info = sys.exc_info()
+        if exc_info[2] is None:
+            return None
+        last_call = traceback.extract_tb(exc_info[2], limit=self.skip_traceback + 1)
+        last_call = last_call[self.skip_traceback]
         return {
-            'msg': exc_info[0].__name__,
+            'message': exc_info[0].__name__,
             'detail': str(exc_info[1]),
             'traceback': f'{path.basename(last_call.filename)}, {last_call.name}, line {last_call.lineno}'
         }
 
     def init_from_dict(self, data):
-        for field in ['code', 'msg', 'detail', 'action', 'dump', 'stack']:
+        for field in ['code', 'message', 'detail', 'action', 'dump', 'stack']:
             if field in data:
                 setattr(self, field, data[field])
 
     @property
-    def message(self):
+    def title(self):
         if self.detail:
-            return f'{self.code}: {self.msg} - {self.detail}'
-        return f'{self.code}: {self.msg}'
+            return f'{self.code}: {self.message} - {self.detail}'
+        return f'{self.code}: {self.message}'
 
     def __str__(self):
-        res = f'ExtException {self.message}'
+        res = f'ExtException {self.title}'
         if self.dump:
             res += f'\n  Dump: action={self.action}; '
             for elem in self.dump:
@@ -128,16 +140,20 @@ class ExtException(Exception):
 
     def to_dict(self):
         return {
-            'msg': self.msg,
+            'name': 'ExtException',
+            'message': self.message,
             'detail': self.detail,
             'code': self.code,
             'action': self.action,
+            'dump': self.dump,
             'stack': self.stack
         }
 
     @classmethod
-    def get_msg_by_code(cls, code):
-        return codes.get(code, "Unknown error")
+    def get_msg_by_code(cls, code, **kwargs):
+        _error = codes.get(str(code), {'en': 'Unknown error'})
+        _lang = kwargs.get('lang', 'en')
+        return _error[_lang]
 
     def get_http_code(self):
-        return http_codes.get(self.code, 500)
+        return http_codes.get(str(self.code), 500)

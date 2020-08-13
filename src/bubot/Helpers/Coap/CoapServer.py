@@ -1,7 +1,7 @@
 import socket
 import asyncio
 import struct
-from bubot.Helpers.Coap.CoapProtocol import CoapProtocol
+from BuBot.Helpers.Coap.CoapProtocol import CoapProtocol
 
 
 class CoapServer:

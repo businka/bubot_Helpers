@@ -1,6 +1,6 @@
 import json
 import urllib.parse
-from bubot.Helpers.Helper import Helper
+from BuBot.Helpers.Helper import Helper
 from os import path
 import os.path
 

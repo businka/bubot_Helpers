@@ -1,5 +1,5 @@
 import unittest
-from bubot.Helpers.JsonSchema.JsonSchema4 import JsonSchema4
+from BuBot.Helpers.JsonSchema.JsonSchema4 import JsonSchema4
 
 
 class TestLoadSchema(unittest.TestCase):

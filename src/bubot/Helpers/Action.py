@@ -6,19 +6,24 @@ from .ExtException import ExtException
 def async_action(f):
     async def wrapper(*args, **kwargs):
         try:
-            name = f'{args[0].__class__.__name__}.{f.__name__}'
+            name = f'{args[0].__name__}.{f.__name__}'
         except Exception:
-            name = f.__name__
+            try:
+                name = f'{args[0].__class__.__name__}.{f.__name__}'
+            except Exception:
+                name = f.__name__
         action = Action(name)
         try:
             kwargs['_action'] = action
             result = await f(*args, **kwargs)
             result = action.add_stat(result)
+            if not isinstance(result, Action):
+                return result
             return action.set_end(result)
         except ExtException as err:
-            raise action.ext_exception(err)
+            raise action.ext_exception(err, action=name)
         except Exception as err:
-            raise action.ext_exception(err)
+            raise action.ext_exception(err, action=name)
     return wrapper
 
 
