@@ -58,7 +58,6 @@ class Helper:
                 action='Helper.get_class'
             )
 
-
     @staticmethod
     def convert_ticks_to_datetime(ticks):
         return datetime(1, 1, 1) + timedelta(microseconds=ticks // 10)
@@ -134,7 +133,8 @@ class Helper:
             try:
                 value = cls.xml_to_json(sub_elem, this_array)
             except Exception as error:
-                element = sub_elem.tag + ("." + sub_elem.get('Имя') if this_array else "") + "." + error.detail if hasattr(
+                element = sub_elem.tag + (
+                    "." + sub_elem.get('Имя') if this_array else "") + "." + error.detail if hasattr(
                     error, 'detail') else ''
                 raise ExtException(error, dump={'element': element})
             if this_array:
@@ -249,7 +249,7 @@ class Helper:
                     _schema = cache['{0}_{1}'.format(_type, elem.__name__)]
                 except KeyError:
                     _schema = cls.get_default_config(elem, root_class, cache)
-                    cache['res' + elem.__name__] = _schema
+                    cache['res' + elem.__name__] = Helper.update_dict({}, _schema)
                 Helper.update_dict(schema, _schema)
         if hasattr(current_class, 'file'):
             config_path = '{0}/{1}.json'.format(os.path.dirname(current_class.file), current_class.__name__)
@@ -261,7 +261,7 @@ class Helper:
                 return schema
             except Exception as e:
                 pass
-        cache['{0}_{1}'.format(_type, current_class.__name__)] = schema
+        cache['{0}_{1}'.format(_type, current_class.__name__)] = Helper.update_dict({},schema)
         return schema
 
 

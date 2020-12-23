@@ -54,7 +54,8 @@ class ExtException(Exception):
         if parent and isinstance(parent, Exception) and not isinstance(parent, ExtException):
             self.code = 3000
             self.message = self.get_msg_by_code(self.code)
-            self.detail = str(parent)
+            if not self.detail:
+                self.detail = str(parent)
             self.add_sys_exc_to_stack()
         if args:
             if isinstance(args[0], str):
@@ -89,7 +90,10 @@ class ExtException(Exception):
         self.stack.append(parent.dump)
 
     def add_sys_exc_to_stack(self):
-        data = self.get_sys_exc_info()
+        try:
+            data = self.get_sys_exc_info()
+        except IndexError:
+            return
         if not data:
             return
         data['action'] = self.action
@@ -119,13 +123,13 @@ class ExtException(Exception):
         return f'{self.code}: {self.message}'
 
     def __str__(self):
-        res = f'ExtException {self.title}'
+        res = f'{self.title}'
         if self.dump:
-            res += f'\n  Dump: action={self.action}; '
+            res += f'\nDump: action={self.action}; '
             for elem in self.dump:
                 res += f'{elem}={self.dump[elem]}; '
         if self.stack:
-            res += '\n  Stack:'
+            res += '\n Stack:'
             for stack in self.stack:
                 _action = stack.get('action', '')
                 if _action:

@@ -1,5 +1,5 @@
 import unittest
-from BuBot.Helpers.ExtException import ExtException
+from Bubot.Helpers.ExtException import ExtException
 
 
 class TestExtException(unittest.TestCase):
